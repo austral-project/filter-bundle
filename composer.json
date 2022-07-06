@@ -1,0 +1,31 @@
+{
+  "name":                                     "austral/filter-bundle",
+  "type":                                     "symfony-bundle",
+  "description":                              "Builder and mapper to filter austral",
+  "keywords":                                 ["Austral", "Mapper", "Filter"],
+  "license":                                  "MIT",
+  "homepage":                                 "https://austral.dev",
+  "version":                                  "3.0",
+  "authors": [
+    {
+      "name":                                 "Matthieu Beurel",
+      "email":                                "matthieu@austral.dev",
+      "role":                                 "Developer"
+    }
+  ],
+  "require": {
+    "php":                                    "^7.4 || ^8.0",
+
+    "austral/tools-bundle":                   "^3.0",
+    "austral/form-bundle":                    "^3.0"
+  },
+  "require-dev": {
+  },
+  "config": {
+    "sort-packages":                          true
+  },
+  "autoload": {
+    "psr-4": { "Austral\\FilterBundle\\": "" }
+  },
+  "minimum-stability":                        "dev"
+}

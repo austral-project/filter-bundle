@@ -1,0 +1,23 @@
+services:
+  _defaults:
+    public:       true
+
+##### Filter Mapper
+  austral.filter.mapper:
+    class:          Austral\FilterBundle\Mapper\FilterMapper
+    arguments:      [ "@request_stack", '@event_dispatcher', "@austral.filter.form.type", "@form.factory"]
+
+
+##### Event Subscriber
+  austral.filter.event_subscriber:
+    class:          Austral\FilterBundle\EventSubscriber\FilterSubscriber
+    arguments:      [ "@event_dispatcher" ]
+    tags:
+      - { name: kernel.event_subscriber }
+
+##### Form Type
+  austral.filter.form.type:
+    class:          Austral\FilterBundle\Form\Type\FilterFormType
+    arguments:      [ "@security.authorization_checker" ]
+    tags:
+      - { name: form.type , alias: austral_filter_form_type }
