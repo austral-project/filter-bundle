@@ -16,7 +16,7 @@ composer require austral/filter-bundle
 ```
 
 ## Documentation
-See documentation on the [official website](https://austral.dev/bundles/filter-bundle)
+See documentation on the [official website](https://austral.dev/en/bundles/filter-bundle)
 
 ## Commit Messages
 
