@@ -1,6 +1,8 @@
 services:
   _defaults:
-    public:       true
+    autowire:       true
+    autoconfigure:  true
+    public:         true
 
 ##### Filter Mapper
   austral.filter.mapper:
