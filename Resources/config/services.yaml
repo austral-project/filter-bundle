@@ -12,6 +12,7 @@ services:
 
 
 ##### Event Subscriber
+  Austral\FilterBundle\EventSubscriber\FilterSubscriber:  "@austral.filter.event_subscriber"
   austral.filter.event_subscriber:
     class:          Austral\FilterBundle\EventSubscriber\FilterSubscriber
     arguments:      [ "@event_dispatcher" ]
