@@ -5,6 +5,7 @@ services:
     public:         true
 
 ##### Filter Mapper
+  Austral\FilterBundle\Mapper\FilterMapper: "@austral.filter.mapper"
   austral.filter.mapper:
     class:          Austral\FilterBundle\Mapper\FilterMapper
     arguments:      [ "@request_stack", '@event_dispatcher', "@austral.filter.form.type", "@form.factory"]
@@ -18,6 +19,7 @@ services:
       - { name: kernel.event_subscriber }
 
 ##### Form Type
+  Austral\FilterBundle\Form\Type\FilterFormType:  "@austral.filter.form.type"
   austral.filter.form.type:
     class:          Austral\FilterBundle\Form\Type\FilterFormType
     arguments:      [ "@security.authorization_checker" ]
