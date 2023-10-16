@@ -150,17 +150,34 @@ class Filter extends Entity implements FilterInterface
    */
   public function add(FilterTypeInterface $filterType): Filter
   {
-    if(!array_key_exists($filterType->getFieldname(), $this->entityManager->getFieldsMapping()))
+    if($filterType->getQueryAlias() !== "root")
     {
-      if(!array_key_exists($filterType->getFieldname(), $this->entityManager->getFieldsMappingWithAssociation()))
+      if(!array_key_exists($filterType->getQueryAlias(), $this->entityManager->getFieldsMapping()))
       {
-        throw new \Exception("The fieldname {$filterType->getFieldname()} is not defined in mapping EntityClass !!!");
+        if(!array_key_exists($filterType->getQueryAlias(), $this->entityManager->getFieldsMappingWithAssociation()))
+        {
+          throw new \Exception("The fieldname {$filterType->getQueryAlias()} is not defined in mapping EntityClass !!!");
+        }
+        else
+        {
+          $this->leftJoin["root.{$filterType->getQueryAlias()}"] = $filterType->getQueryAlias();
+          $filterType->setQueryAlias($filterType->getQueryAlias());
+        }
       }
-      else
+    }
+    else
+    {
+      if(!array_key_exists($filterType->getFieldname(), $this->entityManager->getFieldsMapping()))
       {
-        $fieldMapping = $this->entityManager->getFieldsMappingWithAssociation()[$filterType->getFieldname()];
-        $this->leftJoin["root.{$fieldMapping["leftJoin"]["alias"]}"] = $fieldMapping["leftJoin"]["alias"];
-        $filterType->setQueryAlias($fieldMapping["leftJoin"]["alias"]);
+        if(!array_key_exists($filterType->getFieldname(), $this->entityManager->getFieldsMappingWithAssociation()))
+        {
+          throw new \Exception("The fieldname {$filterType->getFieldname()} is not defined in mapping EntityClass !!!");
+        }
+        else
+        {
+          $this->leftJoin["root.{$filterType->getFieldname()}"] = $filterType->getFieldname();
+          $filterType->setQueryAlias($filterType->getFieldname());
+        }
       }
     }
 
@@ -268,7 +285,12 @@ class Filter extends Entity implements FilterInterface
         if($filterType instanceof FilterType\StringType || $filterType instanceof FilterType\StringChoiceType)
         {
           $aliasUsed[] = $filterType->getQueryAlias();
-          $queryBuilder->andWhere("{$filterType->getQueryAlias()}.{$filterType->getFieldname()} {$filterType->getCondition()} :{$filterType->getFieldname()}")
+          $queryBuilder->andWhere("{$filterType->getQueryAlias()}.{$filterType->getFieldnameQuery()} {$filterType->getCondition()} :{$filterType->getFieldname()}")
+            ->setParameter("{$filterType->getFieldname()}", $filterType->getValueForQueryParameter());
+        }
+        elseif($filterType instanceof FilterType\DateType)
+        {
+          $queryBuilder->andWhere("{$filterType->getQueryAlias()}.{$filterType->getFieldnameQuery()} {$filterType->getCondition()} :{$filterType->getFieldname()}")
             ->setParameter("{$filterType->getFieldname()}", $filterType->getValueForQueryParameter());
         }
       }

@@ -128,11 +128,13 @@ abstract class FilterType implements FilterTypeInterface
         "query"                   =>  function(OptionsResolver $subResolver) {
           $subResolver->setDefault("condition", FilterTypeInterface::CONDITION_LIKE)
             ->setDefault("parameter_format", null)
-            ->setDefault("alias", "root");
+            ->setDefault("alias", "root")
+            ->setDefault("fieldname", null);
 
           $subResolver->addAllowedTypes("condition", array('string'))
             ->addAllowedTypes("parameter_format", array('string', "null"))
-            ->addAllowedTypes("alias", array('string'));
+            ->addAllowedTypes("alias", array('string'))
+            ->addAllowedTypes("fieldname", array('string', "null"));
         },
         "value"                 =>  function(OptionsResolver $subResolver) {
           $subResolver->setDefaults(array(
@@ -292,6 +294,25 @@ abstract class FilterType implements FilterTypeInterface
   public function setQueryAlias(string $alias): FilterTypeInterface
   {
     $this->options["query"]["alias"] = $alias;
+    return $this;
+  }
+
+  /**
+   * @return string
+   */
+  public function getFieldnameQuery(): string
+  {
+    return $this->options["query"]["fieldname"] ?? $this->getFieldname();
+  }
+
+  /**
+   * @param string $fieldname
+   *
+   * @return FilterTypeInterface
+   */
+  public function setFieldnameQuery(string $fieldname): FilterTypeInterface
+  {
+    $this->options["query"]["fieldname"] = $fieldname;
     return $this;
   }
 
