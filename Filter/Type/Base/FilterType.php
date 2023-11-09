@@ -93,12 +93,18 @@ abstract class FilterType implements FilterTypeInterface
     }
 
     $fieldOptions = $this->options["formField"]["options"];
-    $fieldOptions['setter'] = function(Filter $object, $value){
-      $object->setValueByFieldname($this->fieldname, $value);
-    };
-    $fieldOptions['getter'] = function(Filter $object){
-      return $object->getValueByFieldname($this->fieldname);
-    };
+    if(!array_key_exists("setter", $fieldOptions))
+    {
+      $fieldOptions['setter'] = function(Filter $object, $value){
+        $object->setValueByFieldname($this->fieldname, $value);
+      };
+    }
+    if(!array_key_exists("getter", $fieldOptions))
+    {
+      $fieldOptions['getter'] = function(Filter $object){
+        return $object->getValueByFieldname($this->fieldname);
+      };
+    }
     $this->formField = $this->createFormField($formFieldClass, $fieldOptions);
   }
 

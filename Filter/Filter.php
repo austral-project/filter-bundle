@@ -165,6 +165,21 @@ class Filter extends Entity implements FilterInterface
         }
       }
     }
+    elseif($filterType->getFieldnameQuery())
+    {
+      if(!array_key_exists($filterType->getFieldnameQuery(), $this->entityManager->getFieldsMapping()))
+      {
+        if(!array_key_exists($filterType->getFieldnameQuery(), $this->entityManager->getFieldsMappingWithAssociation()))
+        {
+          throw new \Exception("The fieldname {$filterType->getFieldnameQuery()} is not defined in mapping EntityClass !!!");
+        }
+        else
+        {
+          $this->leftJoin["root.{$filterType->getFieldname()}"] = $filterType->getFieldname();
+          $filterType->setQueryAlias($filterType->getFieldname());
+        }
+      }
+    }
     else
     {
       if(!array_key_exists($filterType->getFieldname(), $this->entityManager->getFieldsMapping()))
