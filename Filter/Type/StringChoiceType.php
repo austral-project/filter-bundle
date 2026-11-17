@@ -17,6 +17,10 @@ use Austral\FormBundle\Field\Base\FieldInterface;
 
 /**
  * Austral Filter String Type.
+ * @template T of object
+ *
+ * @extends FilterType<T>
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @final
  */
@@ -29,12 +33,12 @@ class StringChoiceType extends FilterType
   protected string $formFieldDefault = FormField\ChoiceField::class;
 
   /**
-   * @var array|string
+   * @var mixed
    */
-  protected $choiceValues;
+  protected mixed $choiceValues = null;
 
   /**
-   * @var array|string[]
+   * @var array<int|string, mixed>
    */
   protected array $formFieldsAccepted = array(
     FormField\ChoiceField::class,
@@ -43,28 +47,30 @@ class StringChoiceType extends FilterType
   );
 
   /**
-   * @param $fieldname
-   * @param $choiceValues
-   * @param array $options
+   * @param string $fieldname
+   * @param mixed $choiceValues
+   * @param array<string, mixed> $options
    *
-   * @return StringChoiceType
+   * @return StringChoiceType<T>
    * @throws \Exception
    */
-  public static function create($fieldname, $choiceValues, array $options = array()): StringChoiceType
+  public static function create(string $fieldname, mixed $choiceValues = null, array $options = array()): self
   {
-    return new self($fieldname, $choiceValues, $options);
+    /** @var StringChoiceType<T> $element */
+    $element = new self($fieldname, $choiceValues, $options);
+    return $element;
   }
 
   /**
-   * TextField constructor.
+   * StringChoiceType constructor.
    *
    * @param string $fieldname
-   * @param $choiceValues
-   * @param array $options
+   * @param mixed $choiceValues
+   * @param array<string, mixed> $options
    *
    * @throws \Exception
    */
-  public function __construct($fieldname, $choiceValues, array $options = array())
+  public function __construct(string $fieldname, mixed $choiceValues = null, array $options = array())
   {
     if(!array_key_exists("query", $options) || !array_key_exists("condition", $options['query']))
     {
@@ -75,14 +81,16 @@ class StringChoiceType extends FilterType
   }
 
   /**
-   * @param $formFieldClass
-   * @param $fieldOptions
+   * @param string $formFieldClass
+   * @param array<string, mixed> $fieldOptions
    *
-   * @return FieldInterface
+   * @return FieldInterface<T>
    */
-  protected function createFormField($formFieldClass, $fieldOptions): FieldInterface
+  protected function createFormField(string $formFieldClass, array $fieldOptions = array()): FieldInterface
   {
-    return new $formFieldClass($this->fieldname, $this->choiceValues, $fieldOptions);
+    /** @var FieldInterface<T> $field */
+    $field = new $formFieldClass($this->fieldname, $this->choiceValues, $fieldOptions);
+    return $field;
   }
 
 }

@@ -15,6 +15,10 @@ use Austral\FormBundle\Field as FormField;
 
 /**
  * Austral Filter String Type.
+ * @template T of object
+ *
+ * @extends FilterType<T>
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @final
  */
@@ -27,7 +31,7 @@ class StringType extends FilterType
   protected string $formFieldDefault = FormField\TextField::class;
 
   /**
-   * @var array|string[]
+   * @var array<int|string, mixed>
    */
   protected array $formFieldsAccepted = array(
     FormField\TextField::class,
@@ -35,26 +39,28 @@ class StringType extends FilterType
   );
 
   /**
-   * @param $fieldname
-   * @param array $options
+   * @param string $fieldname
+   * @param array<string, mixed> $options
    *
-   * @return $this
+   * @return StringType<T>
    * @throws \Exception
    */
-  public static function create($fieldname, array $options = array()): StringType
+  public static function create(string $fieldname, array $options = array()): self
   {
-    return new self($fieldname, $options);
+    /** @var StringType<T> $element */
+    $element = new self($fieldname, $options);
+    return $element;
   }
 
   /**
    * TextField constructor.
    *
    * @param string $fieldname
-   * @param array $options
+   * @param array<string, mixed> $options
    *
    * @throws \Exception
    */
-  public function __construct($fieldname, array $options = array())
+  public function __construct(string $fieldname, array $options = array())
   {
     parent::__construct($fieldname, $options);
   }

@@ -16,6 +16,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
  * Austral Filter Form Type.
+ * @template T of object
+ *
+ * @extends FormType<T>
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @final
  */
@@ -25,7 +29,7 @@ class FilterFormType extends FormType
   /**
    * @param OptionsResolver $resolver
    */
-  public function configureOptions(OptionsResolver $resolver)
+  public function configureOptions(OptionsResolver $resolver): void
   {
     parent::configureOptions($resolver);
     $resolver->setDefaults([

@@ -11,9 +11,8 @@
 namespace Austral\FilterBundle\Filter;
 
 use Austral\EntityBundle\Entity\Entity;
-use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\FilterBundle\Filter\Type\Base\FilterTypeInterface;
 use Austral\EntityBundle\EntityManager\EntityManagerInterface;
+use Austral\FilterBundle\Filter\Type\Base\FilterTypeInterface;
 use Austral\FilterBundle\Filter\Type as FilterType;
 use Austral\FormBundle\Mapper\FormMapper;
 
@@ -25,6 +24,11 @@ use Symfony\Component\Form\FormView;
 
 /**
  * Austral Filter.
+ * @template T of object
+ *
+ * @extends Entity<T>
+ * @implements FilterInterface<T>
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @final
  */
@@ -32,19 +36,19 @@ class Filter extends Entity implements FilterInterface
 {
 
   /**
-   * @var FormMapper
+   * @var FormMapper<T>
    */
   protected FormMapper $formMapper;
 
   /**
-   * @var EntityManagerInterface
+   * @var EntityManagerInterface<T>
    */
   protected EntityManagerInterface $entityManager;
 
   /**
-   * @var FormInterface
+   * @var FormInterface|null
    */
-  protected FormInterface $form;
+  protected ?FormInterface $form = null;
 
   /**
    * @var FormView|null
@@ -57,24 +61,24 @@ class Filter extends Entity implements FilterInterface
   protected string $keyname;
 
   /**
-   * @var array
+   * @var array<string|int, mixed>
    */
   protected array $data = array();
 
   /**
-   * @var array
+   * @var array<string, FilterTypeInterface<T>>
    */
   protected array $filterTypes = array();
 
   /**
-   * @var array
+   * @var array<string|int, mixed>
    */
   protected array $leftJoin = array();
 
   /**
    * @param string $keyname
-   * @param EntityManagerInterface $entityManager
-   * @param array $data
+   * @param EntityManagerInterface<T> $entityManager
+   * @param array<string|int, mixed> $data
    */
   public function __construct(string $keyname, EntityManagerInterface $entityManager, array $data = array())
   {
@@ -95,9 +99,9 @@ class Filter extends Entity implements FilterInterface
   }
 
   /**
-   * @return FormInterface
+   * @return FormInterface|null
    */
-  public function getForm(): FormInterface
+  public function getForm(): ?FormInterface
   {
     return $this->form;
   }
@@ -114,9 +118,9 @@ class Filter extends Entity implements FilterInterface
   }
 
   /**
-   * @return FormView
+   * @return FormView|null
    */
-  public function getFormView(): FormView
+  public function getFormView(): ?FormView
   {
     if(!$this->formView)
     {
@@ -128,14 +132,14 @@ class Filter extends Entity implements FilterInterface
   /**
    * @return $this
    */
-  public function createFormView(): Filter
+  public function createFormView(): self
   {
-    $this->formView = $this->form->createView();
+    $this->formView = $this->form?->createView();
     return $this;
   }
 
   /**
-   * @return FormMapper
+   * @return FormMapper<T>
    */
   public function getFormMapper(): FormMapper
   {
@@ -143,12 +147,12 @@ class Filter extends Entity implements FilterInterface
   }
 
   /**
-   * @param FilterTypeInterface $filterType
+   * @param FilterTypeInterface<T> $filterType
    *
    * @return $this
    * @throws \Exception
    */
-  public function add(FilterTypeInterface $filterType): Filter
+  public function add(FilterTypeInterface $filterType): self
   {
     if($filterType->getQueryAlias() !== "root")
     {
@@ -206,31 +210,24 @@ class Filter extends Entity implements FilterInterface
   }
 
   /**
-   * @param string $fieldname
-   * @param string|null $subkey
-   *
-   * @return array|bool|float|int|string|null
+   * @inheritDoc
    */
-  public function getValueByFieldname(string $fieldname, string $subkey = null)
+  public function getValueByFieldname(string $fieldname, ?string $subkey = null): mixed
   {
     return $this->getFilterType($fieldname)->getValue($subkey);
   }
 
   /**
-   * @param string $fieldname
-   * @param null $value
-   * @param string|null $subkey
-   *
-   * @return $this
+   * @inheritDoc
    */
-  public function setValueByFieldname(string $fieldname, $value = null, string $subkey = null): EntityInterface
+  public function setValueByFieldname(string $fieldname, mixed $value = null, ?string $subkey = null): self
   {
     $this->getFilterType($fieldname)->setValue($value, $subkey);
     return $this;
   }
 
   /**
-   * @return array
+   * @return array<string, FilterTypeInterface<T>>
    */
   public function getFilterTypes(): array
   {
@@ -240,7 +237,7 @@ class Filter extends Entity implements FilterInterface
   /**
    * @param string $fieldname
    *
-   * @return FilterTypeInterface
+   * @return FilterTypeInterface<T>
    */
   public function getFilterType(string $fieldname): FilterTypeInterface
   {
@@ -254,7 +251,7 @@ class Filter extends Entity implements FilterInterface
   {
     $hasFilterValue = false;
     /**
-     * @var FilterTypeInterface $filterType
+     * @var FilterTypeInterface<T> $filterType
      */
     foreach($this->getFilterTypes() as $filterType)
     {
@@ -291,7 +288,7 @@ class Filter extends Entity implements FilterInterface
 
     $aliasUsed = array();
     /**
-     * @var FilterTypeInterface $filterType
+     * @var FilterTypeInterface<T> $filterType
      */
     foreach($this->getFilterTypes() as $filterType)
     {
@@ -347,6 +344,7 @@ class Filter extends Entity implements FilterInterface
           }
         }
       }
+      /** @var string $join */
       foreach($leftJoin as $join => $alias)
       {
         if(in_array($alias, $aliasUsed)) {

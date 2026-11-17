@@ -17,6 +17,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
  * Austral Abstract Filter Type.
+ * @template T of object
+ *
+ * @implements FilterTypeInterface<T>
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @abstract
  */
@@ -24,14 +28,14 @@ abstract class FilterType implements FilterTypeInterface
 {
 
   /**
-   * @var array
+   * @var array<int|string, mixed>
    */
   protected array $formFieldsAccepted = array();
 
   /**
    * @var string
    */
-  protected string $formFieldDefault;
+  protected string $formFieldDefault = "";
 
   /**
    * @var string
@@ -39,39 +43,39 @@ abstract class FilterType implements FilterTypeInterface
   protected string $fieldname;
 
   /**
-   * @var FieldInterface|null
+   * @var FieldInterface<T>|null
    */
   protected ?FieldInterface $formField;
 
   /**
-   * @var FilterTypeInterface
+   * @var FilterTypeInterface<T>|null
    */
-  protected FilterTypeInterface $parent;
+  protected ?FilterTypeInterface $parent = null;
 
   /**
-   * @var array
+   * @var array<string, FilterTypeInterface<T>>
    */
   protected array $children = array();
 
   /**
-   * @var string|null|array|float|int|bool
+   * @var mixed
    */
-  protected $value;
+  protected mixed $value = null;
 
   /**
-   * @var array
+   * @var array<string, mixed>
    */
   protected array $options;
 
   /**
    * EntityFieldList constructor.
    *
-   * @param $fieldname
-   * @param array $options
+   * @param string $fieldname
+   * @param array<string, mixed> $options
    *
    * @throws \Exception
    */
-  public function __construct($fieldname, array $options = array())
+  public function __construct(string $fieldname, array $options = array())
   {
     $this->fieldname = $fieldname;
 
@@ -83,8 +87,9 @@ abstract class FilterType implements FilterTypeInterface
 
   /**
    * @throws \Exception
+   * @return void
    */
-  protected function initFormField()
+  protected function initFormField(): void
   {
     $formFieldClass = $this->options["formField"]["class"] ? : $this->formFieldDefault;
     if(!in_array($formFieldClass, $this->formFieldsAccepted))
@@ -109,20 +114,22 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * @param $formFieldClass
-   * @param $fieldOptions
+   * @param string $formFieldClass
+   * @param array<string, mixed> $fieldOptions
    *
-   * @return FieldInterface
+   * @return FieldInterface<T>
    */
-  protected function createFormField($formFieldClass, $fieldOptions): FieldInterface
+  protected function createFormField(string $formFieldClass, array $fieldOptions = array()): FieldInterface
   {
-     return new $formFieldClass($this->fieldname, $fieldOptions);
+    /** @var FieldInterface<T> $formField */
+     $formField = new $formFieldClass($this->fieldname, $fieldOptions);
+     return $formField;
   }
 
   /**
    * @param OptionsResolver $resolver
    */
-  protected function configureOptions(OptionsResolver $resolver)
+  protected function configureOptions(OptionsResolver $resolver): void
   {
     $resolver->setDefaults(array(
         "formField"               =>  function(OptionsResolver $subResolver) {
@@ -156,8 +163,7 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * Get fieldname
-   * @return string
+   * @inheritDoc
    */
   public function getFieldname(): string
   {
@@ -165,20 +171,16 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * Get fieldname
-   *
-   * @param $fieldname
-   *
-   * @return FilterTypeInterface
+   * @inheritDoc
    */
-  public function setFieldname($fieldname): FilterTypeInterface
+  public function setFieldname(string $fieldname): self
   {
     $this->fieldname = $fieldname;
     return $this;
   }
 
   /**
-   * @return FieldInterface|null
+   * @inheritDoc
    */
   public function getFormField(): ?FieldInterface
   {
@@ -186,8 +188,7 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * Get options
-   * @return array
+   * @inheritDoc
    */
   public function getOptions(): array
   {
@@ -195,11 +196,9 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * @param array $options
-   *
-   * @return FilterTypeInterface
+   * @inheritDoc
    */
-  public function setOptions(array $options): FilterTypeInterface
+  public function setOptions(array $options): self
   {
     $resolver = new OptionsResolver();
     $this->configureOptions($resolver);
@@ -208,19 +207,17 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * @param string|null $subkey
-   *
-   * @return string|null|array|float|int|bool
+   * @inheritDoc
    */
-  public function getValue(string $subkey = null)
+  public function getValue(?string $subkey = null): mixed
   {
-    return ($subkey && is_array($this->value)) ? AustralTools::getValueByKey($this->value, $subkey, null) : $this->value;
+    return ($subkey && is_array($this->value)) ? AustralTools::valueByKey($this->value, $subkey) : $this->value;
   }
 
   /**
-   * @return string|null|array|float|int|bool
+   * @inheritDoc
    */
-  public function getRenderValue()
+  public function getRenderValue(): mixed
   {
     $value = $this->getValue();
     if($this->options['value']["render"])
@@ -231,12 +228,9 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * @param mixed $value
-   * @param string|null $subkey
-   *
-   * @return FilterTypeInterface
+   * @inheritDoc
    */
-  public function setValue($value, string $subkey = null): FilterTypeInterface
+  public function setValue(mixed $value, ?string $subkey = null): self
   {
     if($subkey)
     {
@@ -269,7 +263,7 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * @return string
+   * @inheritDoc
    */
   public function getCondition(): string
   {
@@ -277,7 +271,7 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * @return string
+   * @inheritDoc
    */
   public function getChildrenConcat(): string
   {
@@ -285,7 +279,7 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * @return string
+   * @inheritDoc
    */
   public function getQueryAlias(): string
   {
@@ -293,18 +287,16 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * @param string $alias
-   *
-   * @return FilterTypeInterface
+   * @inheritDoc
    */
-  public function setQueryAlias(string $alias): FilterTypeInterface
+  public function setQueryAlias(string $alias): self
   {
     $this->options["query"]["alias"] = $alias;
     return $this;
   }
 
   /**
-   * @return string
+   * @inheritDoc
    */
   public function getFieldnameQuery(): string
   {
@@ -312,22 +304,20 @@ abstract class FilterType implements FilterTypeInterface
   }
 
   /**
-   * @param string $fieldname
-   *
-   * @return FilterTypeInterface
+   * @inheritDoc
    */
-  public function setFieldnameQuery(string $fieldname): FilterTypeInterface
+  public function setFieldnameQuery(string $fieldname): self
   {
     $this->options["query"]["fieldname"] = $fieldname;
     return $this;
   }
 
   /**
-   * @return string
+   * @inheritDoc
    */
   public function getValueForQueryParameter(): string
   {
-    return sprintf($this->getParameterFormat(), $this->value ? : "");
+    return $this->getParameterFormat() ? sprintf($this->getParameterFormat(), $this->value ? : "") : "";
   }
 
   /**

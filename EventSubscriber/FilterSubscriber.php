@@ -12,19 +12,20 @@
 namespace Austral\FilterBundle\EventSubscriber;
 
 use Austral\FilterBundle\Event\FilterEvent;
-use Austral\ListBundle\Event\ListEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * Austral FilterSubscriber.
+ * @template T of object
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @final
  */
 class FilterSubscriber implements EventSubscriberInterface
 {
   /**
-   * @return array
+   * @return array<string, string|array{0: string, 1: int}|list<array{0: string, 1?: int}>>
    */
   public static function getSubscribedEvents(): array
   {
@@ -44,20 +45,19 @@ class FilterSubscriber implements EventSubscriberInterface
   }
 
   /**
-   * @param FilterEvent $filterEvent
+   * @param FilterEvent<T> $filterEvent
    */
-  public function end(FilterEvent $filterEvent)
+  public function end(FilterEvent $filterEvent): void
   {
-    if(class_exists(ListEvent::class))
-    {
-      $this->dispatcher->addListener(ListEvent::EVENT_AUSTRAL_LIST_FILTER, function(ListEvent $listEvent) use($filterEvent){
-        if($filterEvent->getFilter()->getKeyname() == $listEvent->getKeyname())
-        {
-          $listEvent->getDataHydrate()->eventFilter($filterEvent->getFilter());
-        }
-      });
-    }
-
+    //if(class_exists(Austral\ListBundle\Event\ListEvent::class))
+    //{
+    //  $this->dispatcher->addListener(Austral\ListBundle\Event\ListEvent::EVENT_AUSTRAL_LIST_FILTER, function(Austral\ListBundle\Event\ListEvent $listEvent) use($filterEvent){
+    //    if($filterEvent->getFilter()->getKeyname() == $listEvent->getKeyname())
+    //    {
+    //      $listEvent->getDataHydrate()->eventFilter($filterEvent->getFilter());
+    //    }
+    //  });
+    //}
   }
 
 }

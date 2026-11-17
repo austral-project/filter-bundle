@@ -15,6 +15,8 @@ use Symfony\Contracts\EventDispatcher\Event;
 
 /**
  * Austral Form Event.
+ * @template T of object
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @final
  */
@@ -23,14 +25,14 @@ class FilterEvent extends Event
   const EVENT_AUSTRAL_FILTER_END = "austral.event.filter_mapper.end";
 
   /**
-   * @var Filter
+   * @var Filter<T>
    */
   protected Filter $filter;
 
   /**
    * FormEvent constructor.
    *
-   * @param Filter $filter
+   * @param Filter<T> $filter
    */
   public function __construct(Filter $filter)
   {
@@ -38,7 +40,7 @@ class FilterEvent extends Event
   }
 
   /**
-   * @return Filter
+   * @return Filter<T>
    */
   public function getFilter(): Filter
   {
@@ -46,11 +48,11 @@ class FilterEvent extends Event
   }
 
   /**
-   * @param Filter $filter
+   * @param Filter<T> $filter
    *
    * @return $this
    */
-  public function setFilter(Filter $filter): FilterEvent
+  public function setFilter(Filter $filter): self
   {
     $this->filter = $filter;
     return $this;

@@ -19,6 +19,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
  * Austral Filter Range Type.
+ * @template T of object
+ *
+ * @extends FilterType<T>
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @final
  */
@@ -34,7 +38,7 @@ class RangeType extends FilterType
   protected string $formFieldDefault = FormField\DatePicker::class;
 
   /**
-   * @var array|string[]
+   * @var array<int|string, mixed>
    */
   protected array $formFieldsAccepted = array(
     FormField\DatePicker::class,
@@ -42,31 +46,33 @@ class RangeType extends FilterType
   );
 
   /**
-   * @var array
+   * @var array<string, FieldInterface<T>>
    */
-  protected array $fields;
+  protected array $fields = array();
 
   /**
-   * @param $fieldname
-   * @param array $options
+   * @param string $fieldname
+   * @param array<string, mixed> $options
    *
-   * @return $this
+   * @return RangeType<T>
    * @throws \Exception
    */
-  public static function create($fieldname, array $options = array()): RangeType
+  public static function create(string $fieldname, array $options = array()): RangeType
   {
-    return new self($fieldname, $options);
+    /** @var RangeType<T> $element */
+    $element = new self($fieldname, $options);
+    return $element;
   }
 
   /**
-   * TextField constructor.
+   * RangeType constructor.
    *
    * @param string $fieldname
-   * @param array $options
+   * @param array<string, mixed> $options
    *
    * @throws \Exception
    */
-  public function __construct($fieldname, array $options = array())
+  public function __construct(string $fieldname, array $options = array())
   {
     parent::__construct($fieldname, $options);
     if(!$this->options['value']["render"])
@@ -88,7 +94,7 @@ class RangeType extends FilterType
   /**
    * @param OptionsResolver $resolver
    */
-  public function configureOptions(OptionsResolver $resolver)
+  public function configureOptions(OptionsResolver $resolver): void
   {
     parent::configureOptions($resolver);
     $resolver->setDefault('range_conditions', function (OptionsResolver $subResolver) {
@@ -114,12 +120,12 @@ class RangeType extends FilterType
   }
 
   /**
-   * @param $formFieldClass
-   * @param $fieldOptions
+   * @param string $formFieldClass
+   * @param array<string, mixed> $fieldOptions
    *
-   * @return FieldInterface
+   * @return FieldInterface<T>
    */
-  protected function createFormField($formFieldClass, $fieldOptions): FieldInterface
+  protected function createFormField(string $formFieldClass, array $fieldOptions = array()): FieldInterface
   {
     $fields = array();
     foreach(array("from", "to") as $filename)
@@ -130,7 +136,9 @@ class RangeType extends FilterType
       $fieldOptions['getter'] = function(Filter $object)  use($filename){
         return $object->getValueByFieldname($this->fieldname, $filename);
       };
-      $fields[$filename] = new $formFieldClass($filename, $fieldOptions);
+      /** @var FieldInterface<T> $field */
+      $field = new $formFieldClass($filename, $fieldOptions);
+      $fields[$filename] = $field;
     }
     return new FormField\MultiField($this->fieldname, $fields);
   }

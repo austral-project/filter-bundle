@@ -18,15 +18,20 @@ use Austral\FilterBundle\Event\FilterEvent;
 use Austral\ListBundle\Filter\FilterMapperInterface;
 use Austral\FormBundle\Event\FormEvent;
 use Austral\ToolsBundle\AustralTools;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\FormFactoryInterface;
-use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 /**
  * Austral Filter Mapper.
+ * @template T of object
+ *
+ * @implements FilterMapperInterface<T>
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @final
  */
@@ -34,29 +39,14 @@ class FilterMapper implements FilterMapperInterface
 {
 
   /**
-   * @var Session
+   * @var SessionInterface|null
    */
-  protected Session $session;
+  protected ?SessionInterface $session = null;
 
   /**
-   * @var Request
+   * @var Request|null
    */
-  protected Request $request;
-
-  /**
-   * @var EventDispatcherInterface
-   */
-  protected EventDispatcherInterface $dispatcher;
-
-  /**
-   * @var FilterFormType
-   */
-  protected FilterFormType $filterFormType;
-
-  /**
-   * @var FormFactoryInterface
-   */
-  protected FormFactoryInterface $formFactory;
+  protected ?Request $request = null;
 
   /**
    * @var string|null
@@ -64,22 +54,22 @@ class FilterMapper implements FilterMapperInterface
   protected ?string $keyname = null;
 
   /**
-   * @var EntityManagerInterface|null
+   * @var EntityManagerInterface<T>|null
    */
   protected ?EntityManagerInterface $entityManager = null;
 
   /**
-   * @var array
+   * @var array<string, mixed>
    */
   protected array $sessionData = array();
 
   /**
-   * @var array
+   * @var array<string, mixed>
    */
   protected array $datas = array();
 
   /**
-   * @var array
+   * @var array<string, Filter<T>>
    */
   protected array $filters = array();
 
@@ -99,18 +89,29 @@ class FilterMapper implements FilterMapperInterface
   protected string $pathToTemplateDefault = "@AustralAdmin/Form/Components/Fields";
 
   /**
-   * @param RequestStack $requestStack
    * @param EventDispatcher $dispatcher
-   * @param FilterFormType $filterFormType
+   * @param FilterFormType<T> $filterFormType
    * @param FormFactoryInterface $formFactory
    */
-  public function __construct(RequestStack $requestStack, EventDispatcherInterface $dispatcher, FilterFormType $filterFormType, FormFactoryInterface $formFactory)
+  public function __construct(
+    #[Autowire(service: "event_dispatcher")] protected EventDispatcherInterface $dispatcher,
+    #[Autowire(service: "austral.filter.form.type")] protected FilterFormType $filterFormType,
+    #[Autowire(service: "form.factory")] protected FormFactoryInterface $formFactory)
+  {
+    $this->filterFormType = $filterFormType->setClass(get_class($this));
+  }
+
+  /**
+   * setRequest
+   *
+   * @param RequestStack $requestStack
+   * @return $this
+   */
+  public function setRequest(RequestStack $requestStack): self
   {
     $this->request = $requestStack->getCurrentRequest();
     $this->session = $requestStack->getSession();
-    $this->dispatcher = $dispatcher;
-    $this->filterFormType = $filterFormType->setClass(get_class($this));
-    $this->formFactory = $formFactory;
+    return $this;
   }
 
   /**
@@ -136,18 +137,18 @@ class FilterMapper implements FilterMapperInterface
   }
 
   /**
-   * @param Session $session
+   * @param SessionInterface $session
    *
    * @return $this
    */
-  public function setSession(Session $session): FilterMapper
+  public function setSession(SessionInterface $session): FilterMapper
   {
     $this->session = $session;
     return $this;
   }
 
   /**
-   * @return EntityManagerInterface|null
+   * @return EntityManagerInterface<T>|null
    * @throws \Exception
    */
   public function getEntityManager(): ?EntityManagerInterface
@@ -160,7 +161,7 @@ class FilterMapper implements FilterMapperInterface
   }
 
   /**
-   * @param EntityManagerInterface $entityManager
+   * @param EntityManagerInterface<T> $entityManager
    *
    * @return $this
    */
@@ -171,15 +172,15 @@ class FilterMapper implements FilterMapperInterface
   }
 
   /**
-   * @return array
+   * @return array<string, mixed>
    * @throws \Exception
    */
   public function getData(): array
   {
-    if(!$this->datas)
+    if(!$this->datas && $this->session && $this->getKeyname())
     {
       $sessionData = $this->session->get($this->sessionName, array());
-      $this->datas = AustralTools::getValueByKey($sessionData, $this->getKeyname(), array());
+      $this->datas = AustralTools::valueByKey($sessionData, $this->getKeyname(), array());
     }
     return $this->datas;
   }
@@ -197,17 +198,18 @@ class FilterMapper implements FilterMapperInterface
   /**
    * @param string $filterKeyname
    *
-   * @return Filter
+   * @return Filter<T>
    * @throws \Exception
    */
   public function filter(string $filterKeyname): Filter
   {
-    if(!$this->filterExist($filterKeyname))
+    if(!$this->filterExist($filterKeyname) && $this->getEntityManager())
     {
+      /** @var Filter<T> $filter */
       $filter = new Filter(
         $filterKeyname,
         $this->getEntityManager(),
-        AustralTools::getValueByKey($this->getData(), $filterKeyname, array())
+        AustralTools::valueByKey($this->getData(), $filterKeyname, array())
       );
       $filter->getFormMapper()
         ->setName("{$this->sessionName}_{$filterKeyname}")
@@ -223,7 +225,7 @@ class FilterMapper implements FilterMapperInterface
   }
 
   /**
-   * @return array
+   * @return array<string, Filter<T>>
    */
   public function filters(): array
   {
@@ -234,10 +236,10 @@ class FilterMapper implements FilterMapperInterface
    * @param string $filterName
    * @param string $fieldname
    *
-   * @return FilterMapper
+   * @return $this
    * @throws \Exception
    */
-  public function cleanFilters(string $filterName = "all", string $fieldname = "all"): FilterMapper
+  public function cleanFilters(string $filterName = "all", string $fieldname = "all"): self
   {
     if($filterName === "all")
     {
@@ -248,7 +250,7 @@ class FilterMapper implements FilterMapperInterface
       $filtersToClean = array($this->filter($filterName));
     }
 
-    /** @var Filter $filterToClean */
+    /** @var Filter<T> $filterToClean */
     foreach($filtersToClean as $filterToClean)
     {
       if($fieldname === "all")
@@ -278,10 +280,11 @@ class FilterMapper implements FilterMapperInterface
 
   /**
    * @throws \Exception
+   * @return void
    */
-  public function execute()
+  public function execute(): void
   {
-    /** @var Filter $filter */
+    /** @var Filter<T> $filter */
     foreach($this->filters() as $filter)
     {
       $form = $this->formFactory->createNamed($filter->getFormMapper()->getKeyname(), get_class($this->filterFormType), $filter);
@@ -292,7 +295,7 @@ class FilterMapper implements FilterMapperInterface
       $this->dispatcher->dispatch($formEvent, FormEvent::EVENT_AUSTRAL_FORM_ADD_AUTO_FIELDS_AFTER);
       $formEvent->setForm($form);
       $this->dispatcher->dispatch($formEvent, FormEvent::EVENT_AUSTRAL_FORM_INIT_END);
-      if($this->request->getMethod() == 'POST') {
+      if($this->request?->getMethod() === 'POST') {
         $form->handleRequest($this->request);
       }
       $filter->createFormView();
@@ -308,17 +311,17 @@ class FilterMapper implements FilterMapperInterface
    * @return $this
    * @throws \Exception
    */
-  public function save(): FilterMapper
+  public function save(): self
   {
-    $sessionData = $this->session->get($this->sessionName, array());
+    $sessionData = $this->session?->get($this->sessionName, array());
     /**
      * @var string $keyname
-     * @var Filter $filter
+     * @var Filter<T> $filter
      */
     foreach($this->filters() as $keyname => $filter)
     {
       $datas = array();
-      /** @var FilterTypeInterface $element */
+      /** @var FilterTypeInterface<T> $element */
       foreach($filter->getFilterTypes() as $element)
       {
         $datas[$element->getFieldname()] = $element->getValue();
@@ -326,7 +329,7 @@ class FilterMapper implements FilterMapperInterface
       $this->datas[$keyname] = $datas;
     }
     $sessionData[$this->keyname] = $this->datas;
-    $this->session->set($this->sessionName, $sessionData);
+    $this->session?->set($this->sessionName, $sessionData);
     return $this;
   }
 

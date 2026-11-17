@@ -16,6 +16,10 @@ use Austral\FormBundle\Field as FormField;
 
 /**
  * Austral Filter String Type.
+ * @template T of object
+ *
+ * @extends FilterType<T>
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @final
  */
@@ -28,33 +32,35 @@ class DateType extends FilterType
   protected string $formFieldDefault = FormField\DatePicker::class;
 
   /**
-   * @var array|string[]
+   * @var array<int|string, mixed>
    */
   protected array $formFieldsAccepted = array(
     FormField\DatePicker::class,
   );
 
   /**
-   * @param $fieldname
-   * @param array $options
+   * @param string $fieldname
+   * @param array<string, mixed> $options
    *
-   * @return $this
+   * @return DateType<T>
    * @throws \Exception
    */
-  public static function create($fieldname, array $options = array()): DateType
+  public static function create(string $fieldname, array $options = array()): DateType
   {
-    return new self($fieldname, $options);
+    /** @var DateType<T> $element */
+    $element = new self($fieldname, $options);
+    return $element;
   }
 
   /**
    * TextField constructor.
    *
    * @param string $fieldname
-   * @param array $options
+   * @param array<string, mixed> $options
    *
    * @throws \Exception
    */
-  public function __construct($fieldname, array $options = array())
+  public function __construct(string $fieldname, array $options = array())
   {
     if(!array_key_exists("query", $options) || !array_key_exists("condition", $options['query']))
     {
@@ -74,7 +80,7 @@ class DateType extends FilterType
    */
   public function getValueForQueryParameter(): string
   {
-    return sprintf($this->getParameterFormat(), $this->value ? $this->value->format("Y-m-d") : "");
+    return $this->getParameterFormat() ? sprintf($this->getParameterFormat(), $this->value ? $this->value->format("Y-m-d") : "") : "";
   }
 
 }

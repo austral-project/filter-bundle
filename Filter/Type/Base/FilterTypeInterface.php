@@ -14,8 +14,10 @@ use Austral\FormBundle\Field\Base\FieldInterface;
 
 /**
  * Austral Filter Type Interface.
+ * @template T of object
+ *
  * @author Matthieu Beurel <matthieu@austral.dev>
- * @abstract
+ * @internal
  */
 interface FilterTypeInterface
 {
@@ -32,16 +34,16 @@ interface FilterTypeInterface
 
   /**
    * Get options
-   * @return array
+   * @return array<string, mixed>
    */
   public function getOptions(): array;
 
   /**
-   * @param array $options
+   * @param array<string, mixed> $options
    *
-   * @return FilterTypeInterface
+   * @return $this
    */
-  public function setOptions(array $options): FilterTypeInterface;
+  public function setOptions(array $options): self;
 
   /**
    * Get fieldname
@@ -52,31 +54,31 @@ interface FilterTypeInterface
   /**
    * Get fieldname
    *
-   * @param $fieldname
+   * @param string $fieldname
    *
-   * @return FilterTypeInterface
+   * @return $this
    */
-  public function setFieldname($fieldname): FilterTypeInterface;
+  public function setFieldname(string $fieldname): self;
 
   /**
-   * @return FieldInterface|null
+   * @return FieldInterface<T>|null
    */
   public function getFormField(): ?FieldInterface;
 
   /**
    * @param string|null $subkey
    *
-   * @return string|null|array|float|int|bool
+   * @return mixed
    */
-  public function getValue(string $subkey = null);
+  public function getValue(?string $subkey = null): mixed;
 
   /**
    * @param mixed $value
    * @param string|null $subkey
    *
-   * @return FilterTypeInterface
+   * @return $this
    */
-  public function setValue($value, string $subkey = null): FilterTypeInterface;
+  public function setValue(mixed $value, ?string $subkey = null): self;
 
   /**
    * @return string
@@ -94,9 +96,14 @@ interface FilterTypeInterface
   public function getQueryAlias(): string;
 
   /**
+   * @return string
+   */
+  public function getFieldnameQuery(): string;
+
+  /**
    * @param string $alias
    *
-   * @return FilterTypeInterface
+   * @return $this
    */
   public function setQueryAlias(string $alias): FilterTypeInterface;
 
@@ -104,5 +111,17 @@ interface FilterTypeInterface
    * @return string
    */
   public function getValueForQueryParameter(): string;
+
+  /**
+   * @param string $fieldname
+   *
+   * @return $this
+   */
+  public function setFieldnameQuery(string $fieldname): self;
+
+  /**
+   * @return mixed
+   */
+  public function getRenderValue(): mixed;
 
 }
